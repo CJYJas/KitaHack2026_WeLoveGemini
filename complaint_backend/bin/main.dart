@@ -26,9 +26,7 @@ Future<void> sendComplaint({
   };
 
   // Replace with your deployed Cloud Function URL
-  final uri = Uri.parse(
-    'https://us-central1-kitahack2026-3d5f3.cloudfunctions.net/verifyComplaint',
-  );
+  final uri = Uri.parse('https://verifycomplaint-dttoblbq3q-uc.a.run.app');
 
   try {
     final response = await http.post(

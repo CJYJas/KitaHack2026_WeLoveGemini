@@ -12,3 +12,6 @@ npm-debug.log*
 # OS files
 .DS_Store
 
+# Google Cloud Service Account Key
+serviceAccountKey.json
+
