@@ -1,0 +1,14 @@
+name: complaint_backend
+description: A new Dart server project.
+version: 1.0.0
+
+environment:
+  sdk: '^3.10.0'
+
+dependencies:
+  http: ^1.2.0
+  uuid: ^4.3.0
+  dotenv: ^4.2.0
+  # Updated to the more modern/maintained version for Dart servers
+  dart_firebase_admin: ^0.4.1
+  gcloud: ^0.8.12
