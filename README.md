@@ -95,8 +95,8 @@ The architecture is **serverless and event-driven**. When a user uploads a photo
 
 ## 8. Future Roadmap
 
-### **Phase 1: Smart City Integration (B2G)**
-Partner with local municipal councils (e.g., **DBKL, MBPJ**) to integrate AI "Purity Scoring" data with official waste collection schedules to identify "Green Zones" and optimize truck routes.
+### **Phase 1: Smart University Integration (B2U)**
+Partner with university (e.g., **University Malaya**) to integrate AI "Purity Scoring" data with official waste collection schedules to identify "Green Zones" and optimize truck routes.
 
 ### **Phase 2: "Smart Bin" Hardware Licensing**
 Transition AI models into physical hardware. License image recognition models to manufacturers of "Smart Bins" for high-traffic areas like malls and transit hubs for instant scanning and rewards.
