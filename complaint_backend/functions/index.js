@@ -2,6 +2,7 @@ const functions = require("firebase-functions");
 const admin = require("firebase-admin");
 const fetch = require("node-fetch");
 const { v4: uuidv4 } = require("uuid");
+const { user } = require("firebase-functions/v1/auth");
 require("dotenv").config();
 
 admin.initializeApp({
@@ -10,10 +11,91 @@ admin.initializeApp({
 
 const db = admin.firestore();
 const bucket = admin.storage().bucket();
-
-// UPDATED: Matches the name in your screenshot
 const GEMINI_KEY = process.env.GEMINI_API_KEY;
 
+//sign up function
+exports.signUp = functions.https.onRequest(async (req, res) => {
+  res.set("Access-Control-Allow-Origin", "*");
+  res.set("Access-Control-Allow-Methods", "POST, OPTIONS");
+  res.set("Access-Control-Allow-Headers", "Content-Type");
+  if (req.method === "OPTIONS") return res.status(204).send("");
+
+  try {
+    const { email, password, username, icNumber } = req.body;
+    if (!email || !password || !username || !icNumber) {
+      return res.status(400).json({ error: "Missing required fields" });
+    }
+
+    const userRecord = await admin.auth().createUser({
+      email,
+      password,
+      displayName: username,
+    });
+
+    await db.collection("users").doc(icNumber).set({
+      username : username,
+      email: email,
+      icNumber: icNumber,
+      firebaseUid : userRecord.uid,
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+    
+    return res.json({
+      success : true,
+      icKey : icNumber,
+      message: "User created successfully",
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+  } catch (error) {
+    console.error("Error creating user:", error);
+    return res.status(500).json({ error: error.message });
+  }
+});
+
+//login function
+exports.login = functions.https.onRequest(async (req, res) => {
+  res.set("Access-Control-Allow-Origin", "*");
+  res.set("Access-Control-Allow-Methods", "POST, OPTIONS");
+  res.set("Access-Control-Allow-Headers", "Content-Type");
+
+  if (req.method === "OPTIONS") return res.status(204).send("");
+
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return res.status(401).json({ error: "No token provided" });
+    }
+
+    const idToken = authHeader.split("Bearer ")[1];
+    const decodedToken = await admin.auth().verifyIdToken(idToken);
+    const firebaseUid = decodedToken.uid;
+
+    const userQuery = await db.collection("users").where("firebaseUid", "==", firebaseUid).limit(1).get();
+    
+    if (userQuery.empty) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    const userDoc = userQuery.docs[0];
+    const userData = userDoc.data();
+
+    return res.json({
+      success: true,
+      icKey: userData.icNumber,
+      username: userData.username,
+      email: userData.email,
+    });
+
+  } catch (error) {
+    console.error("Error logging in:", error);
+    if(error.code === "auth/id-token-expired") {
+      return res.status(401).json({ error: "Token has expired" });
+    }
+    return res.status(500).json({ error: "Internal server error"});
+  }
+});
+
+//Verify Complaint Function
 exports.verifyComplaint = functions.https.onRequest(async (req, res) => {
   res.set("Access-Control-Allow-Origin", "*");
   res.set("Access-Control-Allow-Methods", "POST, OPTIONS");
@@ -22,23 +104,43 @@ exports.verifyComplaint = functions.https.onRequest(async (req, res) => {
   if (req.method === "OPTIONS") return res.status(204).send("");
 
   try {
-    const { imageBase64, userClaimLabel, mlPrediction, userId } = req.body;
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return res.status(401).json({ error: "Unauthorized : No token provided" });
+    }
 
-    if (!imageBase64 || !userClaimLabel || !mlPrediction || !userId) {
+    const idToken = authHeader.split("Bearer ")[1];
+    const decodedToken = await admin.auth().verifyIdToken(idToken);
+    const firebaseUid = decodedToken.uid;
+
+    const userQuery = await db.collection("users").where("firebaseUid", "==", firebaseUid).limit(1).get();
+    if (userQuery.empty) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    const userDoc = userQuery.docs[0];
+    const userData = userDoc.data();
+    const user_ic = userData.icNumber;
+    const user_email = userData.email;
+
+    const { imageBase64, userClaimLabel, mlPrediction} = req.body;
+
+    if (!imageBase64 || !userClaimLabel || !mlPrediction) {
       return res.status(400).json({ error: "Missing required fields" });
     }
 
-    // NEW FIX: Strip 'data:image/...;base64,' prefix before processing
-    // Gemini only accepts raw base64 bytes
-    const rawBase64 = imageBase64.split(',').pop(); 
+    const mimeMatch = imageBase64.match(/^data:(image\/\w+);base64,/);
+    const mimeType = mimeMatch ? mimeMatch[1] : "image/png"; 
+    const extension = mimeType.split('/')[1];
 
+    const rawBase64 = imageBase64.split(',').pop().replace(/\s/g, ''); 
     console.log("Uploading image...");
     const buffer = Buffer.from(rawBase64, "base64");
-    const filename = `complaint_images/${uuidv4()}.png`;
+    const filename = `complaint_images/${uuidv4()}.${extension}`;
     const file = bucket.file(filename);
     
     await file.save(buffer, { 
-      contentType: "image/png",
+      contentType: mimeType,
       public: true 
     });
 
@@ -57,7 +159,7 @@ exports.verifyComplaint = functions.https.onRequest(async (req, res) => {
             parts: [
               { text: prompt },
               // Use rawBase64 here for Gemini
-              { inline_data: { mime_type: "image/png", data: rawBase64 } } 
+              { inline_data: { mime_type: mimeType, data: rawBase64 } } 
             ]
           }]
         }),
@@ -98,7 +200,9 @@ exports.verifyComplaint = functions.https.onRequest(async (req, res) => {
 
     if (verdict === "ML_WRONG") {
       await db.collection("complaints").add({
-        user_id: userId,
+        user_ic: user_ic,
+        user_email: user_email,
+        firebaseUid: firebaseUid,
         image_url: imageUrl,
         user_claim_label: userClaimLabel,
         ml_prediction: mlPrediction,
@@ -114,10 +218,11 @@ exports.verifyComplaint = functions.https.onRequest(async (req, res) => {
 
     return res.json({
       save: verdict === "ML_WRONG",
-      verdict,
+      verdict : verdict,
       confidence: ai.confidence,
+      ai_thought: `I think this is a ${ai.object}. ${ai.reason}`,
       accuracy_info: "Stats updated",
-      message: verdict === "ML_WRONG" ? "Complaint recorded." : "Prediction verified.",
+      message: verdict === "ML_WRONG" ? "Complaint successfully recorded." : "The ML prediction appears to be correct.",
       image_url: imageUrl,
     });
 
