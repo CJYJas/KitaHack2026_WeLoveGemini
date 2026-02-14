@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'camera_screen.dart';
 import 'login_screen.dart';
+import 'rewards_screen.dart';
 import '../services/api_service.dart';
 import 'package:camera/camera.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -16,6 +19,25 @@ class _HomeScreenState extends State<HomeScreen> {
   // Mock data for gamification state
   bool _isThriving = true; 
   double _habitatHealth = 0.8;
+  int _scanCount = 0;
+  int _totalPoints = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadScanCount();
+  }
+
+  Future<void> _loadScanCount() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _scanCount = prefs.getInt('scan_count') ?? 0;
+      _totalPoints = prefs.getInt('total_points') ?? 0;
+      // Calculate health: Starts at 0.3, maxes at 1.0 after 10 scans
+      _habitatHealth = (0.3 + (_scanCount * 0.07)).clamp(0.0, 1.0);
+      _isThriving = _habitatHealth > 0.6;
+    });
+  }
 
   void _logout(BuildContext context) async {
     await ApiService().logout();
@@ -29,9 +51,10 @@ class _HomeScreenState extends State<HomeScreen> {
   void _openCamera(BuildContext context) async {
     final cameras = await availableCameras();
     if (context.mounted) {
-      Navigator.of(context).push(
+      await Navigator.of(context).push(
         MaterialPageRoute(builder: (context) => CameraScreen(cameras: cameras)),
       );
+      _loadScanCount(); // Refresh state after returning
     }
   }
 
@@ -76,31 +99,30 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: Stack(
                   alignment: Alignment.center,
                   children: [
-                    // Placeholder for when images are generated
-                    // Image.asset(
-                    //   _isThriving ? 'assets/images/polar_bear_thriving.png' : 'assets/images/polar_bear_melting.png',
-                    //   fit: BoxFit.contain,
-                    // ),
-                    // Temporary Icon Fallback
-                    Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          _isThriving ? Icons.sentiment_very_satisfied : Icons.sentiment_dissatisfied,
-                          size: 100,
-                          color: _isThriving ? Colors.white : Colors.blueGrey,
-                        ),
-                        const SizedBox(height: 10),
-                        Text(
-                          _isThriving ? "Thriving!" : "Melting...",
-                          style: GoogleFonts.quicksand(
-                            fontSize: 24, 
-                            fontWeight: FontWeight.bold,
-                            color: _isThriving ? Colors.green[800] : Colors.red[800],
-                          ),
-                        ),
-                      ],
-                    ),
+                  // Iceberg moving up/growing based on scan count
+                  Stack(
+                    alignment: Alignment.bottomCenter,
+                    clipBehavior: Clip.none,
+                    children: [
+                       // Iceberg at bottom
+                       AnimatedContainer(
+                         duration: const Duration(seconds: 1),
+                         curve: Curves.easeInOut,
+                         width: 250.0 + (_scanCount * 10),
+                         height: 150.0 + (_scanCount * 5),
+                         child: SvgPicture.asset('assets/images/iceberg.svg', fit: BoxFit.contain),
+                       ),
+                       // Bear on top of iceberg
+                       Padding(
+                         padding: EdgeInsets.only(bottom: 80 + (_scanCount * 2), left: 20), 
+                         child: SizedBox(
+                           width: 120,
+                           height: 120,
+                           child: SvgPicture.asset('assets/images/polar_bear.svg', fit: BoxFit.contain),
+                         ),
+                       ),
+                    ],
+                  ),
                   ],
                 ),
               ),
@@ -137,6 +159,33 @@ class _HomeScreenState extends State<HomeScreen> {
                   const SizedBox(height: 32),
                   
                   // Action Grid
+                  // Display Points
+                  Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.only(bottom: 20),
+                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
+                    decoration: BoxDecoration(
+                      color: Colors.green.shade50,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: Colors.green.shade200),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.stars_rounded, color: Colors.orange, size: 28),
+                        const SizedBox(width: 10),
+                        Text(
+                          '$_totalPoints Points',
+                          style: GoogleFonts.quicksand(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.green.shade800,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
                   Row(
                     children: [
                       Expanded(
@@ -153,7 +202,11 @@ class _HomeScreenState extends State<HomeScreen> {
                           icon: Icons.redeem_rounded,
                           label: 'My Rewards',
                           color: Colors.orange,
-                          onTap: () {},
+                          onTap: () {
+                             Navigator.of(context).push(
+                               MaterialPageRoute(builder: (context) => const RewardsScreen()),
+                             );
+                          },
                         ),
                       ),
                     ],

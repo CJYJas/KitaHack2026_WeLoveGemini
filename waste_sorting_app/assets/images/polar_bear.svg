@@ -1,0 +1,14 @@
+<svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Ears with stroke -->
+  <circle cx="25" cy="35" r="12" fill="white" stroke="#E0E0E0" stroke-width="2"/>
+  <circle cx="95" cy="35" r="12" fill="white" stroke="#E0E0E0" stroke-width="2"/>
+  <!-- Head with stroke -->
+  <circle cx="60" cy="60" r="45" fill="white" stroke="#E0E0E0" stroke-width="2"/>
+  <!-- Snout -->
+  <ellipse cx="60" cy="70" rx="18" ry="14" fill="#F5F5F5"/>
+  <!-- Nose -->
+  <circle cx="60" cy="66" r="6" fill="#333333"/>
+  <!-- Eyes -->
+  <circle cx="45" cy="55" r="4" fill="#333333"/>
+  <circle cx="75" cy="55" r="4" fill="#333333"/>
+</svg>

@@ -1,0 +1,6 @@
+<svg width="200" height="150" viewBox="0 0 200 150" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Main Iceberg Body with Darker Blue and Stroke -->
+  <path d="M100 10 L140 40 L180 30 L190 100 L10 100 L20 40 L60 30 Z" fill="#64B5F6" stroke="#1565C0" stroke-width="3"/>
+  <!-- Shadow/Detail with even darker blue -->
+  <path d="M100 10 L140 40 L120 100 L80 100 L60 30 Z" fill="#42A5F5" fill-opacity="0.5"/>
+</svg>

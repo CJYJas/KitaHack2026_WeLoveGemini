@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'result_screen.dart';
 import '../services/api_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class CameraScreen extends StatefulWidget {
   final List<CameraDescription> cameras;
@@ -115,6 +116,15 @@ class _CameraScreenState extends State<CameraScreen> {
         userClaim: claim,
         mlPrediction: prediction,
       );
+
+      // Increment scan count locally for the Iceberg scaling
+      final prefs = await SharedPreferences.getInstance();
+      int currentCount = prefs.getInt('scan_count') ?? 0;
+      await prefs.setInt('scan_count', currentCount + 1);
+
+      // Increment total points (10 points per scan)
+      int currentPoints = prefs.getInt('total_points') ?? 0;
+      await prefs.setInt('total_points', currentPoints + 10);
 
       if (mounted) {
         Navigator.of(context).push(
