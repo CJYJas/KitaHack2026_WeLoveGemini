@@ -12,13 +12,15 @@ void main() async {
   runApp(const WasteSortingApp());
 }
 
+/// Main Application Widget
+/// PolarGuard - AI-powered waste classification and recycling rewards app
 class WasteSortingApp extends StatelessWidget {
   const WasteSortingApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'WeLoveGemini',
+      title: 'WeLoveGemini - PolarGuard',
       theme: ThemeData(
         useMaterial3: true,
         colorScheme: ColorScheme.fromSeed(
@@ -41,13 +43,16 @@ class WasteSortingApp extends StatelessWidget {
           iconTheme: const IconThemeData(color: Color(0xFF2E7D32)),
         ),
       ),
-      home: const AuthWrapper(),
+      home: const AuthenticationWrapper(),
+      debugShowCheckedModeBanner: false,
     );
   }
 }
 
-class AuthWrapper extends StatelessWidget {
-  const AuthWrapper({super.key});
+/// Authentication Wrapper
+/// Handles routing based on user authentication state
+class AuthenticationWrapper extends StatelessWidget {
+  const AuthenticationWrapper({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -56,12 +61,20 @@ class AuthWrapper extends StatelessWidget {
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Scaffold(
-            body: Center(child: CircularProgressIndicator()),
+            body: Center(
+              child: CircularProgressIndicator(
+                color: Color(0xFF2E7D32),
+              ),
+            ),
           );
         }
+
         if (snapshot.hasData) {
+          // User is logged in
           return const HomeScreen();
         }
+
+        // User is not logged in
         return const LoginScreen();
       },
     );

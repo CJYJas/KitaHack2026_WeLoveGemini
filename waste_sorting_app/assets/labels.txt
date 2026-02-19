@@ -1,0 +1,4 @@
+0 1 Paper
+1 0 Plastic
+2 2 Aluminum
+3 3 Others
