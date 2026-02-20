@@ -39,13 +39,7 @@ While other platforms rely on trust, this system introduces **Visual Verificatio
 * **Analysis:** AI assigns a **Purity Score** .
 * **Validation:** Rewards are only granted for verified, clean recycling, ensuring data integrity for sponsors.
 
-#### 3. Emotional Gamification: The Polar Bear Habitat
-To drive retention, users nurture a digital polar bear environment:
-* **High Scores:** The ice cap grows and thrives.
-* **Low Activity:** The ice melts, providing a visual cue of environmental impact.
-This pairs **Intrinsic Motivation** (emotional connection) with **Extrinsic Rewards**, making sustainable habits engaging.
-
-#### 4. Multi-Stakeholder Reward Loop
+#### 3. Multi-Stakeholder Reward Loop
 The platform connects residents, businesses, and sustainability goals:
 * **Residents:** Earn high-value vouchers (Grab, Shopee) by maintaining 14-day streaks.
 * **Vendors:** Provide rewards in exchange for **ESG Credits** and visibility, creating a self-funding ecosystem independent of government grants.
@@ -53,19 +47,19 @@ The platform connects residents, businesses, and sustainability goals:
 
 ---
 
-## 4. Overview of Technologies Used
+## 4. Overview of Technologies Used (to be completed)
 
 ### **Google Technologies**
 * **Flutter:** Cross-platform mobile UI with smooth 60FPS animations.
 * **Firebase (Firestore & Storage):** Real-time data syncing for points and elastic hosting for "Proof-of-Separation" images.
-* **Google Cloud Functions & Cloud Run:** Serverless backend handling daily mean calculations and reward logic.
+* **Google Cloud Functions & Cloud Run:** Serverless backend logic using firebase-functions (v7.0.0).
 * **Teachable Machine (TensorFlow):** High-speed material classification model.
 * **Gemini API:** Multimodal reasoning for the automated complaint verification system.
 
-### **Other Supporting Tools**
-* **Node.js 24:** Backend runtime for cloud functions.
-* **Python:** Used for initial model training and data preprocessing.
-* **GitHub:** Version control and CI/CD.
+### Backend Runtime & Dependencies
+* **Node.js 20: The official LTS runtime for the cloud functions.
+* **Firebase Admin SDK (v13.6.0): Used for server-side Firestore and Batch operations.
+* **Dotenv: Managing environment variables and API keys securely.
 
 ---
 
@@ -75,11 +69,17 @@ The platform connects residents, businesses, and sustainability goals:
 The architecture is **serverless and event-driven**. When a user uploads a photo to Cloud Storage, it triggers a Cloud Function that invokes the Vertex AI/Gemini endpoint for classification. Results are stored in Firestore, where a real-time listener updates the Flutter UI instantly.
 
 ### **Workflow**
-1. **Input:** User captures waste image via **Flutter**.
-2. **Analysis:** **Teachable Machine (TensorFlow)** model returns a purity percentage.
-3. **Aggregation:** The `submitTrashScore` Cloud Function saves scores and calculates the **Daily Mean**.
-4. **Reward Logic:** If the mean exceeds **90%**, 1 mark is awarded. Upon reaching **14 marks**, a reward is triggered and counters are reset.
-5. **Audit:** Disputes are routed to the **Gemini API** for context-aware reasoning to determine if the ML was incorrect.
+1.  **Identity Handshake:** Upon **Login**, the backend retrieves the user's `icNumber`. The Flutter app persists this locally to automate all subsequent verification and leaderboard requests.
+2.  **AI Waste Consultant (Pre-Scan):** To eliminate the "Confusion Gap," users can ask the in-app AI assistant what category a specific item belongs to. This uses the **Gemini API** to provide instant, conversational guidance on proper disposal before the user performs a formal "Purity Scan."
+3.  **Snapshot Classification:** Users capture waste images via the **Flutter** interface. The integrated **Teachable Machine** model returns a material category and confidence score.
+4.  **Real-Time Aggregation (`recordScan`):** Every scan adds the confidence value to a `sumConfidence` bucket and increments a `count` in the `daily_stats` collection.
+5.  **The "80% Purity" Reward (`dailyRewardCron`):** A scheduled Cloud Function runs at midnight to calculate the **Daily Mean** ($\frac{sumConfidence}{count}$).
+    * **Reward:** If the mean exceeds **80%**, the user earns **1 point** toward their 14-day streak.
+6.  **Complaint & Dispute Verification:** Users can submit a **Complaint** if they believe the AI misclassified their waste.
+    * **Gemini Auditor:** The **Gemini API** analyzes the disputed image against the initial classification to identify "False Negatives."
+    * **Manual Override:** Validated complaints trigger an automatic score correction and update the user's points in Firestore.
+7.  **Gamified Redemption (`redeemVoucher`):** Upon reaching **14 points**, users can claim rewards (e.g., Grab/Shopee vouchers).
+    * **Reset Logic:** The spendable `points` balance resets to **0**, while `totalAccumulatedPoints` and `weeklyPoints` are preserved for global **Leaderboard** standing.
 
 ---
 
@@ -88,8 +88,20 @@ The architecture is **serverless and event-driven**. When a user uploads a photo
 
 ---
 
-## 7. Installation & Setup
-*(To be completed - Example: Flutter pub get, Firebase CLI login, etc.)*
+## 7. Installation & Setup (To be confirmed)
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/CJYJas/KitaHack2026_WeLoveGemini.git
+2. Backend Setup
+   ```bash
+   cd functions
+   npm install
+   firebase deploy --only functions
+3.Frontend Setup
+  ```bash
+  cd waste_sorting_app
+  flutter pub get
+  flutter run
 
 ---
 
