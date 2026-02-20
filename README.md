@@ -102,7 +102,7 @@ The architecture is **serverless and event-driven**. When a user uploads a photo
   cd waste_sorting_app
   flutter pub get
   flutter run
-
+```
 ---
 
 ## 8. Future Roadmap
