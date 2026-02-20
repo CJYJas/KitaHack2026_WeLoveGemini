@@ -37,10 +37,10 @@ packages:
     dependency: "direct main"
     description:
       name: camera
-      sha256: a005c6b9783d895a3a9808d65d06773d13587e22a186b6fe8ef3801b0d12f8cf
+      sha256: "4142a19a38e388d3bab444227636610ba88982e36dff4552d5191a86f65dc437"
       url: "https://pub.dev"
     source: hosted
-    version: "0.11.3+1"
+    version: "0.11.4"
   camera_android_camerax:
     dependency: transitive
     description:
@@ -292,10 +292,10 @@ packages:
     dependency: "direct main"
     description:
       name: google_fonts
-      sha256: c30eef5e7cd26eb89cc8065b4390ac86ce579f2fcdbe35220891c6278b5460da
+      sha256: db9df7a5898d894eeda4c78143f35c30a243558be439518972366880b80bf88e
       url: "https://pub.dev"
     source: hosted
-    version: "8.0.1"
+    version: "8.0.2"
   hooks:
     dependency: transitive
     description:
@@ -465,7 +465,7 @@ packages:
     source: hosted
     version: "2.3.0"
   petitparser:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: petitparser
       sha256: "91bd59303e9f769f108f8df05e371341b15d59e995e6806aefab827b58336675"
@@ -609,10 +609,17 @@ packages:
     dependency: transitive
     description:
       name: test_api
+<<<<<<< HEAD
       sha256: "93167629bfc610f71560ab9312acdda4959de4df6fac7492c89ff0d3886f6636"
       url: "https://pub.dev"
     source: hosted
     version: "0.7.9"
+=======
+      sha256: "19a78f63e83d3a61f00826d09bc2f60e191bf3504183c001262be6ac75589fb8"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.7.8"
+>>>>>>> 5140f0030db964f2d0c3e139592046d94cc1fb52
   typed_data:
     dependency: transitive
     description:
@@ -638,13 +645,13 @@ packages:
     source: hosted
     version: "1.1.13"
   vector_graphics_compiler:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: vector_graphics_compiler
-      sha256: "201e876b5d52753626af64b6359cd13ac6011b80728731428fd34bc840f71c9b"
+      sha256: "5a88dd14c0954a5398af544651c7fb51b457a2a556949bfb25369b210ef73a74"
       url: "https://pub.dev"
     source: hosted
-    version: "1.1.20"
+    version: "1.2.0"
   vector_math:
     dependency: transitive
     description:

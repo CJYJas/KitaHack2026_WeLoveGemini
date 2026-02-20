@@ -16,6 +16,17 @@
       "devDependencies": []
     },
     {
+      "name": "gcloud",
+      "version": "0.8.19",
+      "dependencies": [
+        "_discoveryapis_commons",
+        "googleapis",
+        "http",
+        "meta",
+        "retry"
+      ]
+    },
+    {
       "name": "dart_firebase_admin",
       "version": "0.4.1",
       "dependencies": [
@@ -62,6 +73,33 @@
       ]
     },
     {
+      "name": "retry",
+      "version": "3.1.2",
+      "dependencies": []
+    },
+    {
+      "name": "meta",
+      "version": "1.18.1",
+      "dependencies": []
+    },
+    {
+      "name": "googleapis",
+      "version": "13.2.0",
+      "dependencies": [
+        "_discoveryapis_commons",
+        "http"
+      ]
+    },
+    {
+      "name": "_discoveryapis_commons",
+      "version": "1.0.7",
+      "dependencies": [
+        "http",
+        "http_parser",
+        "meta"
+      ]
+    },
+    {
       "name": "pointycastle",
       "version": "3.9.1",
       "dependencies": [
@@ -76,11 +114,6 @@
       "dependencies": [
         "petitparser"
       ]
-    },
-    {
-      "name": "meta",
-      "version": "1.18.1",
-      "dependencies": []
     },
     {
       "name": "jose",
@@ -123,14 +156,6 @@
         "google_identity_services_web",
         "http",
         "http_parser"
-      ]
-    },
-    {
-      "name": "googleapis",
-      "version": "13.2.0",
-      "dependencies": [
-        "_discoveryapis_commons",
-        "http"
       ]
     },
     {
@@ -270,15 +295,6 @@
       "dependencies": []
     },
     {
-      "name": "_discoveryapis_commons",
-      "version": "1.0.7",
-      "dependencies": [
-        "http",
-        "http_parser",
-        "meta"
-      ]
-    },
-    {
       "name": "google_identity_services_web",
       "version": "0.3.3+1",
       "dependencies": [
@@ -399,22 +415,6 @@
         "source_span",
         "string_scanner"
       ]
-    },
-    {
-      "name": "gcloud",
-      "version": "0.8.19",
-      "dependencies": [
-        "_discoveryapis_commons",
-        "googleapis",
-        "http",
-        "meta",
-        "retry"
-      ]
-    },
-    {
-      "name": "retry",
-      "version": "3.1.2",
-      "dependencies": []
     }
   ],
   "configVersion": 1
