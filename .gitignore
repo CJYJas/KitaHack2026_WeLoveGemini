@@ -15,3 +15,14 @@ npm-debug.log*
 # Google Cloud Service Account Key
 serviceAccountKey.json
 
+# Flutter build files
+waste_sorting_app/android/build/
+waste_sorting_app/ios/Flutter/AppFrameworkInfo.plist
+waste_sorting_app/macos/Flutter/GeneratedPluginRegistrant.swift
+waste_sorting_app/windows/flutter/generated_plugin_registrant.*
+waste_sorting_app/linux/flutter/generated_plugin_registrant.*
+waste_sorting_app/assets/labels.txt
+waste_sorting_app/assets/model_unquant.tflite
+waste_sorting_app/build_log.txt
+waste_sorting_app/android/build/reports/
+
