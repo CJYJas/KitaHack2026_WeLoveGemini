@@ -3,7 +3,7 @@ const admin = require("firebase-admin");
 const fetch = require("node-fetch");
 const { v4: uuidv4 } = require("uuid");
 const { user } = require("firebase-functions/v1/auth");
-const{ onSchedule } = require("firebase-functions/v2/scheduler");
+const { onSchedule } = require("firebase-functions/v2/scheduler");
 const { getFirestore } = require("firebase-admin/firestore");
 const { initializeApp } = require("firebase-admin/app");
 require("dotenv").config();
@@ -44,19 +44,19 @@ exports.signUp = functions.https.onRequest(async (req, res) => {
     });
 
     await db.collection("users").doc(icNumber).set({
-      username : username,
+      username: username,
       email: email,
       icNumber: icNumber,
-      firebaseUid : userRecord.uid,
-      points: 0,                   
-      weeklyPoints: 0,             
+      firebaseUid: userRecord.uid,
+      points: 0,
+      weeklyPoints: 0,
       totalAccumulatedPoints: 0,
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
     });
-    
+
     return res.json({
-      success : true,
-      icKey : icNumber,
+      success: true,
+      icKey: icNumber,
       message: "User created successfully",
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
     });
@@ -81,7 +81,7 @@ exports.login = functions.https.onRequest(async (req, res) => {
     const firebaseUid = decodedToken.uid;
 
     const userQuery = await db.collection("users").where("firebaseUid", "==", firebaseUid).limit(1).get();
-    
+
     if (userQuery.empty) {
       return res.status(404).json({ error: "User not found" });
     }
@@ -98,10 +98,10 @@ exports.login = functions.https.onRequest(async (req, res) => {
 
   } catch (error) {
     console.error("Error logging in:", error);
-    if(error.code === "auth/id-token-expired") {
+    if (error.code === "auth/id-token-expired") {
       return res.status(401).json({ error: "Token has expired" });
     }
-    return res.status(500).json({ error: "Internal server error"});
+    return res.status(500).json({ error: "Internal server error" });
   }
 });
 
@@ -117,7 +117,7 @@ exports.recordScan = functions.https.onRequest(async (req, res) => {
     const dailyStatId = `${icNumber}_${today}`;
 
     const batch = db.batch();
-    
+
     // Save raw scan
     const scanRef = db.collection("scans").doc();
     batch.set(scanRef, {
@@ -138,6 +138,16 @@ exports.recordScan = functions.https.onRequest(async (req, res) => {
     }, { merge: true });
 
     await batch.commit();
+
+    // AWARD POINT IMMEDIATELY IF CONFIDENCE >= 80
+    if (confidence >= 80) {
+      await db.collection("users").doc(icNumber).update({
+        points: admin.firestore.FieldValue.increment(1),
+        weeklyPoints: admin.firestore.FieldValue.increment(1),
+        totalAccumulatedPoints: admin.firestore.FieldValue.increment(1)
+      });
+    }
+
     return res.json({ success: true, message: "Scan saved successfully" });
   } catch (error) {
     return res.status(500).json({ error: error.message });
@@ -146,39 +156,39 @@ exports.recordScan = functions.https.onRequest(async (req, res) => {
 
 //daily reward processing function
 exports.dailyRewardCron = onSchedule("59 23 * * *", async (event) => {
-    const today = new Date().toISOString().split('T')[0];
-    const snapshot = await db.collection("daily_stats")
-      .where("date", "==", today)
-      .where("rewardProcessed", "==", false)
-      .get();
+  const today = new Date().toISOString().split('T')[0];
+  const snapshot = await db.collection("daily_stats")
+    .where("date", "==", today)
+    .where("rewardProcessed", "==", false)
+    .get();
 
-    const batch = db.batch();
+  const batch = db.batch();
 
-    snapshot.forEach(doc => {
-      const data = doc.data();
-      const average = data.sumConfidence / data.count;
+  snapshot.forEach(doc => {
+    const data = doc.data();
+    const average = data.sumConfidence / data.count;
 
-      if (average >= 80) {
-        const userRef = db.collection("users").doc(data.user_ic);
-        batch.update(userRef, {
-          points: admin.firestore.FieldValue.increment(1),
-          weeklyPoints: admin.firestore.FieldValue.increment(1),
-          totalAccumulatedPoints: admin.firestore.FieldValue.increment(1)
-        });
-      }
-      batch.update(doc.ref, { rewardProcessed: true });
-    });
-
-    return batch.commit();
+    if (average >= 80) {
+      const userRef = db.collection("users").doc(data.user_ic);
+      batch.update(userRef, {
+        points: admin.firestore.FieldValue.increment(1),
+        weeklyPoints: admin.firestore.FieldValue.increment(1),
+        totalAccumulatedPoints: admin.firestore.FieldValue.increment(1)
+      });
+    }
+    batch.update(doc.ref, { rewardProcessed: true });
   });
+
+  return batch.commit();
+});
 
 //leaderboard function
 exports.getLeaderboard = functions.https.onRequest(async (req, res) => {
   if (handleCors(req, res)) return;
 
   try {
-    const { icNumber, type } = req.query; 
-    
+    const { icNumber, type } = req.query;
+
     // 1. Determine the correct field based on 'type'
     // Default to weekly if not specified for safety
     const field = type === 'total' ? 'totalAccumulatedPoints' : 'weeklyPoints';
@@ -248,23 +258,23 @@ exports.redeemVoucher = functions.https.onRequest(async (req, res) => {
 
     // 3. Strict Logic Check
     if (currentPoints < 14) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         success: false,
-        error: "Insufficient points", 
+        error: "Insufficient points",
         currentPoints: currentPoints,
-        needed: 14 
+        needed: 14
       });
     }
 
     // 4. Update the database
-    await userRef.update({ 
-      points: 0, 
+    await userRef.update({
+      points: 0,
       totalVouchersClaimed: admin.firestore.FieldValue.increment(1)
-    }); 
-    
-    return res.json({ 
-      success: true, 
-      message: "Voucher redeemed successfully!" 
+    });
+
+    return res.json({
+      success: true,
+      message: "Voucher redeemed successfully!"
     });
 
   } catch (error) {
@@ -275,13 +285,73 @@ exports.redeemVoucher = functions.https.onRequest(async (req, res) => {
 
 //reset weekly leaderboard every sunday at midnight
 exports.resetWeeklyLeaderboard = onSchedule("0 0 * * 0", async (event) => {
-    const users = await db.collection("users").get();
-    const batch = db.batch();
-    users.forEach(user => {
-      batch.update(user.ref, { weeklyPoints: 0 });
-    });
-    return batch.commit();
+  const users = await db.collection("users").get();
+  const batch = db.batch();
+  users.forEach(user => {
+    batch.update(user.ref, { weeklyPoints: 0 });
   });
+  return batch.commit();
+});
+
+//get all scans for a user
+exports.getScans = functions.https.onRequest(async (req, res) => {
+  if (handleCors(req, res)) return;
+
+  try {
+    const { icNumber } = req.query;
+    if (!icNumber) return res.status(400).json({ error: "IC Number is required" });
+
+    const snapshot = await db.collection("scans")
+      .where("user_ic", "==", icNumber)
+      .orderBy("timestamp", "desc")
+      .get();
+
+    const scans = [];
+    snapshot.forEach(doc => {
+      const data = doc.data();
+      scans.push({
+        id: doc.id,
+        category: data.category,
+        confidence: data.confidence,
+        timestamp: data.timestamp ? data.timestamp.toDate().toISOString() : null
+      });
+    });
+
+    return res.json({ scans });
+  } catch (error) {
+    console.error("Get Scans Error:", error);
+    return res.status(500).json({ error: error.message });
+  }
+});
+
+//get user profile data
+exports.getUserProfile = functions.https.onRequest(async (req, res) => {
+  if (handleCors(req, res)) return;
+
+  try {
+    const { icNumber } = req.query;
+    if (!icNumber) return res.status(400).json({ error: "IC Number is required" });
+
+    const userDoc = await db.collection("users").doc(icNumber).get();
+    if (!userDoc.exists) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    const userData = userDoc.data();
+    return res.json({
+      success: true,
+      username: userData.username,
+      email: userData.email,
+      icNumber: userData.icNumber,
+      points: userData.points || 0,
+      weeklyPoints: userData.weeklyPoints || 0,
+      totalAccumulatedPoints: userData.totalAccumulatedPoints || 0
+    });
+  } catch (error) {
+    console.error("Get User Profile Error:", error);
+    return res.status(500).json({ error: error.message });
+  }
+});
 
 //Verify Complaint Function
 exports.verifyComplaint = functions.https.onRequest(async (req, res) => {
@@ -311,29 +381,29 @@ exports.verifyComplaint = functions.https.onRequest(async (req, res) => {
     const user_ic = userData.icNumber;
     const user_email = userData.email;
 
-    const { imageBase64, userClaimLabel, mlPrediction} = req.body;
+    const { imageBase64, userClaimLabel, mlPrediction } = req.body;
 
     if (!imageBase64 || !userClaimLabel || !mlPrediction) {
       return res.status(400).json({ error: "Missing required fields" });
     }
 
     const mimeMatch = imageBase64.match(/^data:(image\/\w+);base64,/);
-    const mimeType = mimeMatch ? mimeMatch[1] : "image/png"; 
+    const mimeType = mimeMatch ? mimeMatch[1] : "image/png";
     const extension = mimeType.split('/')[1];
 
-    const rawBase64 = imageBase64.split(',').pop().replace(/\s/g, ''); 
+    const rawBase64 = imageBase64.split(',').pop().replace(/\s/g, '');
     console.log("Uploading image...");
     const buffer = Buffer.from(rawBase64, "base64");
     const filename = `complaint_images/${uuidv4()}.${extension}`;
     const file = bucket.file(filename);
-    
-    await file.save(buffer, { 
+
+    await file.save(buffer, {
       contentType: mimeType,
-      public: true 
+      public: true
     });
 
     const imageUrl = `https://storage.googleapis.com/${bucket.name}/${filename}`;
-    
+
     // Gemini API Call
     const prompt = `ML predicted: ${mlPrediction}\nUser claims: ${userClaimLabel}\nAnalyze image and return JSON ONLY: {"object": "", "ml_wrong": "YES/NO", "confidence": 0, "reason": "", "category": "", "tags": []}`;
 
@@ -347,7 +417,7 @@ exports.verifyComplaint = functions.https.onRequest(async (req, res) => {
             parts: [
               { text: prompt },
               // Use rawBase64 here for Gemini
-              { inline_data: { mime_type: mimeType, data: rawBase64 } } 
+              { inline_data: { mime_type: mimeType, data: rawBase64 } }
             ]
           }]
         }),
@@ -364,7 +434,7 @@ exports.verifyComplaint = functions.https.onRequest(async (req, res) => {
     const rawText = respJson.candidates[0].content.parts[0].text;
     const jsonMatch = rawText.match(/\{[\s\S]*\}/);
     if (!jsonMatch) throw new Error("No JSON found in AI response");
-    
+
     const ai = JSON.parse(jsonMatch[0]);
 
     const verdict = ai.ml_wrong === "YES" ? "ML_WRONG" : "CORRECT";
@@ -374,10 +444,10 @@ exports.verifyComplaint = functions.https.onRequest(async (req, res) => {
     await db.runTransaction(async (t) => {
       const statsDoc = await t.get(statsRef);
       const data = statsDoc.exists ? statsDoc.data() : { total_checked: 0, total_wrong: 0 };
-      
+
       const newTotal = data.total_checked + 1;
       const newWrong = verdict === "ML_WRONG" ? data.total_wrong + 1 : data.total_wrong;
-      
+
       t.set(statsRef, {
         total_checked: newTotal,
         total_wrong: newWrong,
@@ -406,7 +476,7 @@ exports.verifyComplaint = functions.https.onRequest(async (req, res) => {
 
     return res.json({
       save: verdict === "ML_WRONG",
-      verdict : verdict,
+      verdict: verdict,
       confidence: ai.confidence,
       ai_thought: `I think this is a ${ai.object}. ${ai.reason}`,
       accuracy_info: "Stats updated",
@@ -422,38 +492,38 @@ exports.verifyComplaint = functions.https.onRequest(async (req, res) => {
 
 // TEMPORARY: Use this to test rewards manually
 exports.manualRewardTest = functions.https.onRequest(async (req, res) => {
-    const today = new Date().toISOString().split('T')[0];
-    const snapshot = await db.collection("daily_stats")
-      .where("date", "==", today)
-      .where("rewardProcessed", "==", false)
-      .get();
+  const today = new Date().toISOString().split('T')[0];
+  const snapshot = await db.collection("daily_stats")
+    .where("date", "==", today)
+    .where("rewardProcessed", "==", false)
+    .get();
 
-    if (snapshot.empty) {
-        return res.json({ message: "No pending rewards found for today." });
+  if (snapshot.empty) {
+    return res.json({ message: "No pending rewards found for today." });
+  }
+
+  const batch = db.batch();
+  let rewardedCount = 0;
+
+  snapshot.forEach(doc => {
+    const data = doc.data();
+    const average = data.sumConfidence / data.count;
+
+    if (average >= 80) {
+      const userRef = db.collection("users").doc(data.user_ic);
+      batch.update(userRef, {
+        points: admin.firestore.FieldValue.increment(1),
+        weeklyPoints: admin.firestore.FieldValue.increment(1),
+        totalAccumulatedPoints: admin.firestore.FieldValue.increment(1)
+      });
+      rewardedCount++;
     }
+    batch.update(doc.ref, { rewardProcessed: true });
+  });
 
-    const batch = db.batch();
-    let rewardedCount = 0;
-
-    snapshot.forEach(doc => {
-      const data = doc.data();
-      const average = data.sumConfidence / data.count;
-
-      if (average >= 80) {
-        const userRef = db.collection("users").doc(data.user_ic);
-        batch.update(userRef, {
-          points: admin.firestore.FieldValue.increment(1),
-          weeklyPoints: admin.firestore.FieldValue.increment(1),
-          totalAccumulatedPoints: admin.firestore.FieldValue.increment(1)
-        });
-        rewardedCount++;
-      }
-      batch.update(doc.ref, { rewardProcessed: true });
-    });
-
-    await batch.commit();
-    return res.json({ 
-        success: true, 
-        message: `Processed ${snapshot.size} users. ${rewardedCount} users hit the 80% mark and got points!` 
-    });
+  await batch.commit();
+  return res.json({
+    success: true,
+    message: `Processed ${snapshot.size} users. ${rewardedCount} users hit the 80% mark and got points!`
+  });
 });

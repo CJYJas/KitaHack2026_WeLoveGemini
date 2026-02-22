@@ -356,13 +356,22 @@ class _CameraScreenState extends State<CameraScreen> {
         mlPrediction: classification.label,
       );
 
+      // Record the scan for the daily performance tracking (Feature 1)
+      await _apiService.recordScan(
+        category: classification.label,
+        confidence: classification.confidence * 100, // Convert to percentage
+      );
+
       // Update local stats
       final prefs = await SharedPreferences.getInstance();
       int scanCount = prefs.getInt('scan_count') ?? 0;
       await prefs.setInt('scan_count', scanCount + 1);
 
-      int totalPoints = prefs.getInt('total_points') ?? 0;
-      await prefs.setInt('total_points', totalPoints + 10);
+      // Award 1 Mark if confidence >= 80%
+      if (classification.confidence * 100 >= 80) {
+        int totalMarks = prefs.getInt('total_marks') ?? 0;
+        await prefs.setInt('total_marks', totalMarks + 1);
+      }
 
       if (mounted) {
         Navigator.of(context).push(

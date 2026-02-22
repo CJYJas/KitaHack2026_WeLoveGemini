@@ -4,96 +4,94 @@ import 'package:google_fonts/google_fonts.dart';
 import 'camera_screen.dart';
 import 'login_screen.dart';
 import 'rewards_screen.dart';
+import 'leaderboard_screen.dart';
+import 'daily_summary_screen.dart';
 import '../services/api_service.dart';
 import 'package:camera/camera.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'navigation_wrapper.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  State<HomeScreen> createState() => HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class HomeScreenState extends RefreshableState<HomeScreen> {
   // Mock data for gamification state
   bool _isThriving = true; 
+
+  @override
+  void refresh() => _loadData();
+
   double _habitatHealth = 0.8;
   int _scanCount = 0;
-  int _totalPoints = 0;
+  int _totalMarks = 0;
+  List<dynamic> _history = [];
+  bool _isLoadingHistory = true;
 
   @override
   void initState() {
     super.initState();
-    _loadScanCount();
+    _loadData();
   }
 
-  Future<void> _loadScanCount() async {
-    final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      _scanCount = prefs.getInt('scan_count') ?? 0;
-      _totalPoints = prefs.getInt('total_points') ?? 0;
-      // Calculate health: Starts at 0.3, maxes at 1.0 after 10 scans
-      _habitatHealth = (0.3 + (_scanCount * 0.07)).clamp(0.0, 1.0);
-      _isThriving = _habitatHealth > 0.6;
-    });
-  }
-
-  void _logout(BuildContext context) async {
-    await ApiService().logout();
-    if (context.mounted) {
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (context) => const LoginScreen()),
-      );
+  Future<void> _loadData() async {
+    try {
+      final apiService = ApiService();
+      final profile = await apiService.getUserProfile();
+      final history = await apiService.getHistory();
+      
+      setState(() {
+        _totalMarks = (profile['points'] ?? 0).toInt();
+        _history = history;
+        _isLoadingHistory = false;
+        
+        // For habitat health, we still use scan_count but it would be better 
+        // if the backend returned this. For now, let's keep it from prefs or length of history.
+        _scanCount = history.length; 
+        _habitatHealth = (0.3 + (_scanCount * 0.07)).clamp(0.0, 1.0);
+        _isThriving = _habitatHealth > 0.6;
+      });
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error loading home data: $e')),
+        );
+      }
+      setState(() => _isLoadingHistory = false);
     }
-  }
-
-  void _openCamera(BuildContext context) async {
-    final cameras = await availableCameras();
-    if (context.mounted) {
-      await Navigator.of(context).push(
-        MaterialPageRoute(builder: (context) => CameraScreen(cameras: cameras)),
-      );
-      _loadScanCount(); // Refresh state after returning
-    }
-  }
-
-  void _toggleState() {
-    setState(() {
-      _isThriving = !_isThriving;
-      _habitatHealth = _isThriving ? 0.8 : 0.3;
-    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFE1F5FE), // Ice Blue background
+      backgroundColor: const Color(0xFFF1F8E9), // Pale Greenish-White
       appBar: AppBar(
-        title: const Text('Polar Guard'),
-        backgroundColor: Colors.transparent,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.exit_to_app),
-            onPressed: () => _logout(context),
+        title: Text(
+          'Polar Guard',
+          style: GoogleFonts.quicksand(
+            fontWeight: FontWeight.bold,
+            color: const Color(0xFF558B2F),
           ),
-        ],
+        ),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
       ),
       body: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             // Dynamic Habitat Section
-            GestureDetector(
-              onTap: _toggleState, // Tap to demo state change
-              child: Container(
+            Container(
                 height: 350,
                 decoration: const BoxDecoration(
                   gradient: LinearGradient(
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
-                    colors: [Colors.transparent, Colors.white],
-                    stops: [0.6, 0.9],
+                    colors: [Colors.transparent, Color(0xFFE8F5E9)],
+                    stops: [0.6, 1.0],
                   ),
                 ),
                 child: Stack(
@@ -126,90 +124,142 @@ class _HomeScreenState extends State<HomeScreen> {
                   ],
                 ),
               ),
-            ),
             
             // Stats & Controls
             Container(
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
-                boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 10, offset: Offset(0, -5))],
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 20,
+                    offset: const Offset(0, -10),
+                  )
+                ],
               ),
-              padding: const EdgeInsets.all(24.0),
+              padding: const EdgeInsets.all(28.0),
               child: Column(
                 children: [
                   Text(
                     'Habitat Health',
                     style: GoogleFonts.quicksand(
                       fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.blueGrey[700],
+                      fontWeight: FontWeight.bold,
+                      color: const Color(0xFF558B2F),
                     ),
                   ),
-                  const SizedBox(height: 12),
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(10),
-                    child: LinearProgressIndicator(
-                      value: _habitatHealth,
-                      backgroundColor: Colors.grey[200],
-                      color: _habitatHealth > 0.5 ? Colors.green : Colors.orange,
-                      minHeight: 15,
-                    ),
-                  ),
-                  const SizedBox(height: 32),
-                  
-                  // Action Grid
-                  // Display Points
+                  const SizedBox(height: 16),
                   Container(
-                    width: double.infinity,
-                    margin: const EdgeInsets.only(bottom: 20),
-                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
+                    height: 20,
                     decoration: BoxDecoration(
-                      color: Colors.green.shade50,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: Colors.green.shade200),
+                      color: const Color(0xFFDCEDC8),
+                      borderRadius: BorderRadius.circular(10),
                     ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
+                    child: Stack(
                       children: [
-                        const Icon(Icons.stars_rounded, color: Colors.orange, size: 28),
-                        const SizedBox(width: 10),
-                        Text(
-                          '$_totalPoints Points',
-                          style: GoogleFonts.quicksand(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.green.shade800,
+                        AnimatedContainer(
+                          duration: const Duration(milliseconds: 800),
+                          width: MediaQuery.of(context).size.width * 0.8 * _habitatHealth,
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFFAED581), Color(0xFF9CCC65)],
+                            ),
+                            borderRadius: BorderRadius.circular(10),
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(0xFFAED581).withOpacity(0.4),
+                                blurRadius: 4,
+                                offset: const Offset(0, 2),
+                              )
+                            ],
                           ),
                         ),
                       ],
                     ),
                   ),
-
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _ActionButton(
-                          icon: Icons.camera_alt_rounded,
-                          label: 'Scan Trash',
-                          color: Colors.green,
-                          onTap: () => _openCamera(context),
+                  const SizedBox(height: 32),
+                  
+                  // Display Marks
+                  Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.only(bottom: 24),
+                    padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF1F8E9),
+                      borderRadius: BorderRadius.circular(24),
+                      border: Border.all(color: const Color(0xFFDCEDC8)),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.green.withOpacity(0.05),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        )
+                      ],
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.stars_rounded, color: Color(0xFFFFB74D), size: 32),
+                        const SizedBox(width: 12),
+                        Text(
+                          '$_totalMarks Marks',
+                          style: GoogleFonts.quicksand(
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                            color: const Color(0xFF558B2F),
+                          ),
                         ),
+                      ],
+                    ),
+                  ),
+                  
+                  const SizedBox(height: 8),
+                  // Daily Summary Section
+                  InkWell(
+                    onTap: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(builder: (context) => const DailySummaryScreen()),
+                      );
+                    },
+                    borderRadius: BorderRadius.circular(28),
+                    child: Container(
+                      padding: const EdgeInsets.all(24),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFE3F2FD),
+                        borderRadius: BorderRadius.circular(28),
+                        border: Border.all(color: const Color(0xFFBBDEFB)),
                       ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: _ActionButton(
-                          icon: Icons.redeem_rounded,
-                          label: 'My Rewards',
-                          color: Colors.orange,
-                          onTap: () {
-                             Navigator.of(context).push(
-                               MaterialPageRoute(builder: (context) => const RewardsScreen()),
-                             );
-                          },
-                        ),
+                      child: Column(
+                        children: [
+                          Row(
+                            children: [
+                              const Icon(Icons.analytics_rounded, color: Color(0xFF1976D2)),
+                              const SizedBox(width: 12),
+                              Text(
+                                'Daily Summary',
+                                style: GoogleFonts.quicksand(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: const Color(0xFF1976D2),
+                                ),
+                              ),
+                              const Spacer(),
+                              const Icon(Icons.chevron_right_rounded, color: Color(0xFF1976D2)),
+                            ],
+                          ),
+                          const SizedBox(height: 20),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceAround,
+                            children: [
+                              _buildDailyStat('Scans', '$_scanCount'),
+                              _buildDailyStat('Avg Acc.', '84.5%'),
+                              _buildDailyStat('Status', 'Trustworthy'),
+                            ],
+                          ),
+                        ],
                       ),
-                    ],
+                    ),
                   ),
                   
                   const SizedBox(height: 32),
@@ -220,19 +270,76 @@ class _HomeScreenState extends State<HomeScreen> {
                       style: GoogleFonts.quicksand(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
-                        color: Colors.black87,
+                        color: const Color(0xFF558B2F),
                       ),
                     ),
                   ),
                   const SizedBox(height: 16),
-                  _buildHistoryItem('Plastic Bottle', '+10 pts', Icons.recycling, Colors.blue),
-                  _buildHistoryItem('Cardboard Box', '+15 pts', Icons.inventory_2, Colors.brown),
+                  
+                  _isLoadingHistory 
+                    ? const Center(child: CircularProgressIndicator())
+                    : _history.isEmpty 
+                      ? Text('No scans yet!', style: GoogleFonts.quicksand(color: Colors.grey))
+                      : Column(
+                          children: _history.take(5).map((scan) {
+                            return _buildHistoryItem(
+                              scan['category'] ?? 'Waste',
+                              scan['confidence'] >= 80 ? '+1 mark' : '0 marks',
+                              _getCategoryIcon(scan['category']),
+                              _getCategoryColor(scan['category']),
+                            );
+                          }).toList(),
+                        ),
                 ],
               ),
             ),
           ],
         ),
       ),
+    );
+  }
+
+  IconData _getCategoryIcon(String? category) {
+    category = category?.toLowerCase() ?? '';
+    if (category.contains('plastic')) return Icons.recycling;
+    if (category.contains('paper')) return Icons.description;
+    if (category.contains('aluminium') || category.contains('tin')) return Icons.inventory_2;
+    if (category.contains('glass')) return Icons.liquor;
+    if (category.contains('food')) return Icons.restaurant;
+    return Icons.delete_outline;
+  }
+
+  Color _getCategoryColor(String? category) {
+    category = category?.toLowerCase() ?? '';
+    if (category.contains('plastic')) return Colors.blue;
+    if (category.contains('paper')) return Colors.orange;
+    if (category.contains('aluminium') || category.contains('tin')) return Colors.grey;
+    if (category.contains('glass')) return Colors.teal;
+    if (category.contains('food')) return Colors.brown;
+    return Colors.blueGrey;
+  }
+
+  Widget _buildDailyStat(String label, String value) {
+    return Column(
+      children: [
+        Text(
+          value,
+          style: GoogleFonts.quicksand(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: const Color(0xFF0D47A1),
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          label,
+          style: GoogleFonts.quicksand(
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
+            color: const Color(0xFF64B5F6),
+          ),
+        ),
+      ],
     );
   }
 
@@ -283,7 +390,7 @@ class _HomeScreenState extends State<HomeScreen> {
 class _ActionButton extends StatelessWidget {
   final IconData icon;
   final String label;
-  final MaterialColor color;
+  final Color color;
   final VoidCallback onTap;
 
   const _ActionButton({
@@ -297,23 +404,31 @@ class _ActionButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(24),
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 24),
+        padding: const EdgeInsets.symmetric(vertical: 20),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: color.withOpacity(0.3)),
+          color: color.withOpacity(0.12),
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: color.withOpacity(0.2)),
+          boxShadow: [
+            BoxShadow(
+              color: color.withOpacity(0.05),
+              blurRadius: 8,
+              offset: const Offset(0, 4),
+            )
+          ],
         ),
         child: Column(
           children: [
-            Icon(icon, size: 32, color: color),
-            const SizedBox(height: 8),
+            Icon(icon, size: 36, color: color),
+            const SizedBox(height: 12),
             Text(
               label,
-              style: GoogleFonts.poppins(
-                fontWeight: FontWeight.w600,
-                color: color[800],
+              style: GoogleFonts.quicksand(
+                fontWeight: FontWeight.bold,
+                fontSize: 15,
+                color: color.withOpacity(0.9),
               ),
             ),
           ],
