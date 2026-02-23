@@ -88,21 +88,74 @@ The architecture is **serverless and event-driven**. When a user uploads a photo
 
 ---
 
-## 7. Installation & Setup (To be confirmed)
-1. Clone the repository:
+## 7. Installation & Setup
+
+### Prerequisites
+Before you begin, ensure you have the following installed on your system:
+
+1. **Flutter SDK**: [Install Flutter](https://flutter.dev/docs/get-started/install) and ensure it is added to your system PATH.
+2. **Dart SDK**: Comes bundled with Flutter.
+3. **Android Studio** (for Android development):
+   - Install Android Studio from [here](https://developer.android.com/studio).
+   - Ensure you have the latest Android SDK and Android Virtual Device (AVD) installed.
+4. **Xcode** (for iOS development, macOS only):
+   - Install Xcode from the Mac App Store.
+   - Ensure you have the latest iOS SDK installed.
+5. **Node.js and npm**: Install from [Node.js official website](https://nodejs.org/).
+6. **Firebase CLI**: Install Firebase CLI by running:
    ```bash
-   git clone https://github.com/CJYJas/KitaHack2026_WeLoveGemini.git
-2. Backend Setup
-   ```bash
-   cd functions
-   npm install
-   firebase deploy --only functions
-3.Frontend Setup
-  ```bash
-  cd waste_sorting_app
-  flutter pub get
-  flutter run
+   npm install -g firebase-tools
+   ```
+7. **Git**: Install Git from [Git official website](https://git-scm.com/).
+
+### Clone the Repository
+Clone the repository to your local machine using the following command:
+```bash
+git clone https://github.com/CJYJas/KitaHack2026_WeLoveGemini.git
 ```
+
+### Backend Setup
+1. Navigate to the backend folder:
+   ```bash
+   cd complaint_backend/functions
+   ```
+2. Install the required Node.js dependencies:
+   ```bash
+   npm install
+   ```
+3. Deploy the Firebase functions:
+   ```bash
+   firebase deploy --only functions
+   ```
+
+### Frontend Setup
+1. Navigate to the frontend folder:
+   ```bash
+   cd waste_sorting_app
+   ```
+2. Install the required Flutter dependencies:
+   ```bash
+   flutter pub get
+   ```
+3. Run the app on your desired platform:
+   - For Android:
+     ```bash
+     flutter run -d <device_id>
+     ```
+   - For iOS (macOS only):
+     ```bash
+     flutter run -d ios
+     ```
+   - For Web:
+     ```bash
+     flutter run -d chrome
+     ```
+
+### Additional Notes
+- Ensure your Android device has **USB debugging** enabled if deploying to a physical device.
+- For iOS deployment, ensure you have a valid Apple Developer account and the necessary provisioning profiles.
+- If you encounter any issues, refer to the [Flutter documentation](https://flutter.dev/docs) or the [Firebase documentation](https://firebase.google.com/docs).
+
 ---
 
 ## 8. Future Roadmap
