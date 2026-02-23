@@ -150,6 +150,7 @@ class ApiService {
   Future<void> recordScan({
     required String category,
     required double confidence,
+    bool isComplaint = false,
   }) async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -164,6 +165,7 @@ class ApiService {
           'icNumber': icNumber,
           'category': category,
           'confidence': confidence,
+          'isComplaint': isComplaint,
         }),
       );
 

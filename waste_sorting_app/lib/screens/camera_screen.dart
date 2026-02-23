@@ -306,20 +306,18 @@ class _CameraScreenState extends State<CameraScreen> {
     setState(() => _isProcessing = true);
     try {
       print('[Complaint] Submitting complaint...');
-      print('[Complaint] Model predicted: ${_classifications![0].label}');
-      print('[Complaint] Correct label: $correctLabel');
-
-      // TODO: Call complaint_backend API
-      // This should send:
-      // - Image
-      // - Model prediction
-      // - User's correction
-      // - User ID
+      
+      // Still record the scan, but mark as a complaint (Feature Refinement)
+      await _apiService.recordScan(
+        category: _classifications![0].label,
+        confidence: _classifications![0].confidence * 100,
+        isComplaint: true,
+      );
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('✓ Complaint submitted. Thank you for helping!'),
+            content: Text('✓ Complaint recorded in history. Thank you!'),
             backgroundColor: Colors.green,
           ),
         );
@@ -356,22 +354,17 @@ class _CameraScreenState extends State<CameraScreen> {
         mlPrediction: classification.label,
       );
 
-      // Record the scan for the daily performance tracking (Feature 1)
+      // Record the scan for the daily performance tracking
       await _apiService.recordScan(
         category: classification.label,
         confidence: classification.confidence * 100, // Convert to percentage
+        isComplaint: false,
       );
 
-      // Update local stats
+      // Update local stats (Scan count only, MARKS are awarded at 12am now)
       final prefs = await SharedPreferences.getInstance();
       int scanCount = prefs.getInt('scan_count') ?? 0;
       await prefs.setInt('scan_count', scanCount + 1);
-
-      // Award 1 Mark if confidence >= 80%
-      if (classification.confidence * 100 >= 80) {
-        int totalMarks = prefs.getInt('total_marks') ?? 0;
-        await prefs.setInt('total_marks', totalMarks + 1);
-      }
 
       if (mounted) {
         Navigator.of(context).push(

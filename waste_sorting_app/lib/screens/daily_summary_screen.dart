@@ -36,18 +36,22 @@ class _DailySummaryScreenState extends State<DailySummaryScreen> {
       }).toList();
 
       double sumConfidence = 0;
-      int marks = 0;
+      int validScanCount = 0;
       for (var scan in todayScans) {
-        double conf = (scan['confidence'] ?? 0).toDouble();
-        sumConfidence += conf;
-        if (conf >= 80) marks++;
+        if (scan['isComplaint'] != true) {
+          sumConfidence += (scan['confidence'] ?? 0).toDouble();
+          validScanCount++;
+        }
       }
+
+      double avgAcc = validScanCount == 0 ? 0.0 : sumConfidence / validScanCount;
 
       setState(() {
         _totalScans = history.length; 
         _todayScans = todayScans;
-        _earnedMarks = marks;
-        _avgAccuracy = todayScans.isEmpty ? 0.0 : sumConfidence / todayScans.length;
+        _avgAccuracy = avgAcc;
+        // Logic: show '1' if current average accuracy is 80>=. show '0' if <80.
+        _earnedMarks = avgAcc >= 80 ? 1 : 0;
         _isLoading = false;
       });
     } catch (e) {
@@ -127,7 +131,7 @@ class _DailySummaryScreenState extends State<DailySummaryScreen> {
           Container(width: 1, height: 50, color: Colors.white24),
           _buildStatItem('Avg Accuracy', '${_avgAccuracy.toStringAsFixed(1)}%'),
           Container(width: 1, height: 50, color: Colors.white24),
-          _buildStatItem('Today\'s Marks', '$_earnedMarks'),
+          _buildStatItem('Daily Mark', '$_earnedMarks'),
         ],
       ),
     );
@@ -159,7 +163,7 @@ class _DailySummaryScreenState extends State<DailySummaryScreen> {
 
   Widget _buildScanListItem(Map<String, dynamic> scan) {
     double confidence = (scan['confidence'] ?? 0).toDouble();
-    bool isQualified = confidence >= 80;
+    bool isComplaint = scan['isComplaint'] == true;
     String category = scan['category'] ?? 'Waste';
     String timestampStr = scan['timestamp'] ?? '';
     String time = '';
@@ -177,7 +181,7 @@ class _DailySummaryScreenState extends State<DailySummaryScreen> {
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: isQualified ? const Color(0xFFC8E6C9) : const Color(0xFFFFEBEE),
+          color: isComplaint ? const Color(0xFFEF5350).withOpacity(0.5) : const Color(0xFFC8E6C9),
         ),
       ),
       child: Row(
@@ -185,12 +189,12 @@ class _DailySummaryScreenState extends State<DailySummaryScreen> {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: (isQualified ? Colors.green : Colors.red).withOpacity(0.1),
+              color: (isComplaint ? const Color(0xFFEF5350) : Colors.green).withOpacity(0.1),
               shape: BoxShape.circle,
             ),
             child: Icon(
-              isQualified ? Icons.check_circle_rounded : Icons.info_outline_rounded,
-              color: isQualified ? Colors.green : Colors.red,
+              isComplaint ? Icons.report_problem_rounded : Icons.check_circle_rounded,
+              color: isComplaint ? const Color(0xFFEF5350) : Colors.green,
             ),
           ),
           const SizedBox(width: 16),
@@ -198,15 +202,41 @@ class _DailySummaryScreenState extends State<DailySummaryScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  category,
-                  style: GoogleFonts.quicksand(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),
+                Row(
+                  children: [
+                    Text(
+                      category,
+                      style: GoogleFonts.quicksand(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+                    if (isComplaint)
+                      Padding(
+                        padding: const EdgeInsets.only(left: 8.0),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFEF5350).withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: const Color(0xFFEF5350).withOpacity(0.5)),
+                          ),
+                          child: Text(
+                            'Complaint',
+                            style: GoogleFonts.quicksand(
+                              fontSize: 10,
+                              color: const Color(0xFFEF5350),
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
                 Text(
-                  '$time • ${confidence.toStringAsFixed(1)}% accuracy',
+                  isComplaint 
+                      ? '$time • Model prediction error reported' // More descriptive
+                      : '$time • ${confidence.toStringAsFixed(1)}% accuracy',
                   style: GoogleFonts.quicksand(
                     color: Colors.grey[600],
                     fontSize: 12,
@@ -215,22 +245,6 @@ class _DailySummaryScreenState extends State<DailySummaryScreen> {
               ],
             ),
           ),
-          if (isQualified)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(
-                color: const Color(0xFFAED581),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text(
-                '+1 Mark',
-                style: GoogleFonts.quicksand(
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-              ),
-            ),
         ],
       ),
     );
@@ -248,10 +262,10 @@ class _DailySummaryScreenState extends State<DailySummaryScreen> {
         children: [
           Row(
             children: [
-              const Icon(Icons.lightbulb_rounded, color: Color(0xFFFBC02D)),
+              const Icon(Icons.stars_rounded, color: Color(0xFFFBC02D)),
               const SizedBox(width: 12),
               Text(
-                'How to earn more Marks?',
+                'Help our Habitat Thrive',
                 style: GoogleFonts.quicksand(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
@@ -262,7 +276,7 @@ class _DailySummaryScreenState extends State<DailySummaryScreen> {
           ),
           const SizedBox(height: 12),
           Text(
-            'Ensure you scan waste items clearly within the frame. Every scan with 80% or more accuracy grants you 1 Mark instantly!',
+            'Keep your average accuracy above 80% to earn 1 daily Mark! Points are officially awarded every night at 12 AM.',
             style: GoogleFonts.quicksand(
               fontSize: 14,
               color: const Color(0xFFF57F17),

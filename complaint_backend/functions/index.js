@@ -110,43 +110,39 @@ exports.recordScan = functions.https.onRequest(async (req, res) => {
   if (handleCors(req, res)) return;
 
   try {
-    const { icNumber, category, confidence } = req.body;
-    if (!icNumber || !confidence) return res.status(400).json({ error: "Missing data" });
+    const { icNumber, category, confidence, isComplaint } = req.body;
+    if (!icNumber || !category || confidence === undefined) {
+      return res.status(400).json({ error: "Missing fields" });
+    }
 
     const today = new Date().toISOString().split('T')[0];
     const dailyStatId = `${icNumber}_${today}`;
 
     const batch = db.batch();
 
-    // Save raw scan
+    // 1. Record the scan
     const scanRef = db.collection("scans").doc();
     batch.set(scanRef, {
       user_ic: icNumber,
-      category: category,
-      confidence: confidence,
+      category,
+      confidence,
+      isComplaint: !!isComplaint,
       timestamp: admin.firestore.FieldValue.serverTimestamp()
     });
 
-    // Update daily aggregator
-    const dailyRef = db.collection("daily_stats").doc(dailyStatId);
-    batch.set(dailyRef, {
-      user_ic: icNumber,
-      date: today,
-      sumConfidence: admin.firestore.FieldValue.increment(confidence),
-      count: admin.firestore.FieldValue.increment(1),
-      rewardProcessed: false
-    }, { merge: true });
+    // 2. Update daily aggregator (ONLY if NOT a complaint)
+    if (!isComplaint) {
+      const dailyRef = db.collection("daily_stats").doc(dailyStatId);
+      batch.set(dailyRef, {
+        user_ic: icNumber,
+        date: today,
+        sumConfidence: admin.firestore.FieldValue.increment(confidence),
+        count: admin.firestore.FieldValue.increment(1),
+        rewardProcessed: false
+      }, { merge: true });
+    }
 
     await batch.commit();
-
-    // AWARD POINT IMMEDIATELY IF CONFIDENCE >= 80
-    if (confidence >= 80) {
-      await db.collection("users").doc(icNumber).update({
-        points: admin.firestore.FieldValue.increment(1),
-        weeklyPoints: admin.firestore.FieldValue.increment(1),
-        totalAccumulatedPoints: admin.firestore.FieldValue.increment(1)
-      });
-    }
 
     return res.json({ success: true, message: "Scan saved successfully" });
   } catch (error) {
@@ -313,6 +309,7 @@ exports.getScans = functions.https.onRequest(async (req, res) => {
         id: doc.id,
         category: data.category,
         confidence: data.confidence,
+        isComplaint: !!data.isComplaint,
         timestamp: data.timestamp ? data.timestamp.toDate().toISOString() : null
       });
     });
