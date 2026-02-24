@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
+import 'package:model_viewer_plus/model_viewer_plus.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'camera_screen.dart';
 import 'login_screen.dart';
@@ -102,19 +102,35 @@ class HomeScreenState extends RefreshableState<HomeScreen> {
                       alignment: Alignment.bottomCenter,
                       clipBehavior: Clip.none,
                       children: [
-                        AnimatedContainer(
-                          duration: const Duration(seconds: 1),
-                          curve: Curves.easeInOut,
-                          width: 250.0 + (_scanCount * 10),
-                          height: 150.0 + (_scanCount * 5),
-                          child: SvgPicture.asset('assets/images/iceberg.svg', fit: BoxFit.contain),
-                        ),
-                        Padding(
-                          padding: EdgeInsets.only(bottom: 80 + (_scanCount * 2), left: 20), 
-                          child: SizedBox(
-                            width: 120,
-                            height: 120,
-                            child: SvgPicture.asset('assets/images/polar_bear.svg', fit: BoxFit.contain),
+                        SizedBox(
+                          width: double.infinity,
+                          height: 350,
+                          child: Stack(
+                            alignment: Alignment.center,
+                            children: [
+                              ModelViewer(
+                                src: 'assets/low_poly_iceberg_scene.glb',
+                                alt: "Iceberg Habitat",
+                                autoRotate: false,
+                                cameraControls: false,
+                                backgroundColor: Colors.transparent,
+                              ),
+                              Padding(
+                                padding: const EdgeInsets.only(bottom: 80), // Lift bear to top of iceberg
+                                child: SizedBox(
+                                  width: 140, // Slightly larger
+                                  height: 140,
+                                  child: ModelViewer(
+                                    src: 'assets/polar_bear.glb',
+                                    alt: "Polar Bear",
+                                    cameraOrbit: "-45deg 75deg auto", // Turn left 45' and adjust angle
+                                    autoRotate: false,
+                                    cameraControls: false,
+                                    backgroundColor: Colors.transparent,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ],
