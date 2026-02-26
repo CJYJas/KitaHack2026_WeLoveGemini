@@ -22,7 +22,6 @@ Despite national campaigns, Malaysia struggles with a **37.9% recycling rate**, 
 * **SDG 13 (Climate Action):** Diverting organic waste to reduce methane emissions from landfills.
 * **SDG 17 (Partnerships):** Creating an ESG-funded reward loop between vendors and citizens.
 
-
 ### **Solution Description**
 Our solution is a mobile application that uses **Computer Vision (TensorFlow)** to identify waste and **Generative AI (Gemini)** to handle disputes.
 
@@ -50,16 +49,16 @@ The platform connects residents, businesses, and sustainability goals:
 ## 4. Overview of Technologies Used (to be completed)
 
 ### **Google Technologies**
-* **Flutter:** Cross-platform mobile UI with smooth 60FPS animations.
-* **Firebase (Firestore & Storage):** Real-time data syncing for points and elastic hosting for "Proof-of-Separation" images.
-* **Google Cloud Functions & Cloud Run:** Serverless backend logic using firebase-functions (v7.0.0).
-* **Teachable Machine (TensorFlow):** High-speed material classification model.
-* **Gemini API:** Multimodal reasoning for the automated complaint verification system.
+* ![Flutter](https://img.shields.io/badge/Flutter-3.x-02569B?style=flat&logo=flutter&logoColor=white) **Flutter:** Cross-platform mobile UI with smooth 60FPS animations.
+* ![Firebase](https://img.shields.io/badge/Firebase-Auth%20%7C%20Firestore-FFCA28?style=flat&logo=firebase&logoColor=black) **Firebase:** Real-time data syncing for points and elastic hosting for "Proof-of-Separation" images.
+* ![Google Cloud](https://img.shields.io/badge/Google_Cloud-Functions%20%7C%20Run-4285F4?style=flat&logo=google-cloud&logoColor=white) **Google Cloud:** Serverless backend logic using `firebase-functions` (v7.0.0).
+* ![TensorFlow](https://img.shields.io/badge/TensorFlow-Teachable_Machine-FF6F00?style=flat&logo=tensorflow&logoColor=white) **Teachable Machine:** High-speed material classification model.
+* ![Gemini](https://img.shields.io/badge/Google-Gemini_API-8E75B2?style=flat&logo=googlegemini&logoColor=white) **Gemini API:** Multimodal reasoning for the automated complaint verification system.
 
 ### Backend Runtime & Dependencies
-* **Node.js 20: The official LTS runtime for the cloud functions.
-* **Firebase Admin SDK (v13.6.0): Used for server-side Firestore and Batch operations.
-* **Dotenv: Managing environment variables and API keys securely.
+* ![Node.js](https://img.shields.io/badge/Node.js-20_LTS-339933?style=flat&logo=nodedotjs&logoColor=white) **Node.js 20:** The official LTS runtime for the cloud functions.
+* ![Firebase Admin](https://img.shields.io/badge/Firebase_Admin-v13.6.0-FFCA28?style=flat&logo=firebase&logoColor=black) **Firebase Admin SDK:** Used for server-side Firestore and Batch operations.
+* ![Dotenv](https://img.shields.io/badge/Dependency-Dotenv-ECD53F?style=flat&logo=dotenv&logoColor=black) **Dotenv:** Managing environment variables and API keys securely.
 
 ---
 
