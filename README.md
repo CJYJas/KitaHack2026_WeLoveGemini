@@ -67,18 +67,26 @@ The platform connects residents, businesses, and sustainability goals:
 ### **System Architecture**
 The architecture is **serverless and event-driven**. When a user uploads a photo to Cloud Storage, it triggers a Cloud Function that invokes the Vertex AI/Gemini endpoint for classification. Results are stored in Firestore, where a real-time listener updates the Flutter UI instantly.
 
-### **Workflow**
-1.  **Identity Handshake:** Upon **Login**, the backend retrieves the user's `icNumber`. The Flutter app persists this locally to automate all subsequent verification and leaderboard requests.
-2.  **AI Waste Consultant (Pre-Scan):** To eliminate the "Confusion Gap," users can ask the in-app AI assistant what category a specific item belongs to. This uses the **Gemini API** to provide instant, conversational guidance on proper disposal before the user performs a formal "Purity Scan."
-3.  **Snapshot Classification:** Users capture waste images via the **Flutter** interface. The integrated **Teachable Machine** model returns a material category and confidence score.
-4.  **Real-Time Aggregation (`recordScan`):** Every scan adds the confidence value to a `sumConfidence` bucket and increments a `count` in the `daily_stats` collection.
-5.  **The "80% Purity" Reward (`dailyRewardCron`):** A scheduled Cloud Function runs at midnight to calculate the **Daily Mean** ($\frac{sumConfidence}{count}$).
-    * **Reward:** If the mean exceeds **80%**, the user earns **1 point** toward their 14-day streak.
-6.  **Complaint & Dispute Verification:** Users can submit a **Complaint** if they believe the AI misclassified their waste.
-    * **Gemini Auditor:** The **Gemini API** analyzes the disputed image against the initial classification to identify "False Negatives."
-    * **Manual Override:** Validated complaints trigger an automatic score correction and update the user's points in Firestore.
-7.  **Gamified Redemption (`redeemVoucher`):** Upon reaching **14 points**, users can claim rewards (e.g., Grab/Shopee vouchers).
-    * **Reset Logic:** The spendable `points` balance resets to **0**, while `totalAccumulatedPoints` and `weeklyPoints` are preserved for global **Leaderboard** standing.
+## 🔄 Project Workflow
+
+### **1. Onboarding & AI Consultation**
+* **Identity Handshake:** Secure login using `icNumber` to persist user profiles and automate subsequent leaderboard requests.
+* **AI Waste Consultant:** Real-time guidance via the **Gemini API**, providing conversational help on waste categories before the user performs a formal scan.
+
+### **2. Classification & Scoring**
+* **Snapshot Classification:** Users capture images via **Flutter**, which are processed by a **Teachable Machine** model to return material categories and confidence scores.
+* **Real-Time Aggregation:** The `recordScan` function updates the `sumConfidence` and `count` fields within the `daily_stats` Firestore collection for every valid scan.
+
+### **3. Automated Reward Logic**
+* **Daily Mean Calculation:** A scheduled **Cloud Function** (`dailyRewardCron`) triggers at midnight to calculate performance:
+  $$\text{Daily Mean} = \frac{\text{sumConfidence}}{\text{count}}$$
+* **The "80% Purity" Reward:** If the calculated mean exceeds **80%**, the user is awarded **1 point** toward their 14-day streak.
+
+### **4. Dispute & Redemption**
+* **Gemini Auditor:** If a user submits a **Complaint** regarding a misclassification, the **Gemini API** acts as an auditor to analyze the image context and resolve the dispute.
+* **Manual Override:** Validated complaints trigger an automatic score correction and update user points in Firestore.
+* **Gamified Redemption:** Upon reaching **14 points**, users can trigger the `redeemVoucher` function to claim rewards (e.g., Grab/Shopee vouchers).
+* **Reset Logic:** The spendable `points` balance resets to 0, while `totalAccumulatedPoints` are preserved for global leaderboard standings.
 
 ---
 
