@@ -5,7 +5,7 @@ Welcome to the official repository for **WeLoveGemini**. Our project is an AI-dr
 
 **Team Members:**
 * **Jasmine Chin Jia Yee** 
-* **Zoey Wong Zi Xin** 
+* **Wong Zixin** 
 * **Josephine Ding Jie Yu** 
 
 ---
@@ -91,8 +91,30 @@ The architecture is **serverless and event-driven**. When a user uploads a photo
 ---
 
 ## 6. Challenges Faced
-*(To be completed - Example: Dealing with API versioning (v1beta) and environment variable configurations for the Gemini API.)*
 
+### Product Strategy & Impact
+
+* **Defining Target Users & Scale**
+* **Problem:** A vague global scope reduced local effectiveness.
+* **Solution:** Focused on university students (for example: UM Campus) pilot for measurable local impact.
+
+
+* **Healthy Competition via Leaderboards**
+* **Problem:** Designing a competitive system that motivates consistency
+* **Solution:** Implemented a  ranking system featuring weekly and lifetime tiers, supplemented by personalized rank cards to celebrate individual milestones.
+
+
+### AI Quality & Logic
+
+* **Mitigating Environmental Noise**
+* **Problem:** The model frequently misidentified hands, surfaces or complex backgrounds as recyclable objects.
+* **Solution:** Developed and trained a robust **"Others"** class using a custom dataset
+
+
+* **Handling Material Complexity**
+* **Problem:** Standard lightweight models struggled to judge material purity, such as detecting food stains or contamination.
+* **Solution:** Integrated **Gemini 1.5 Flash** to perform expert cloud audits on ambiguous items, ensuring high-level accuracy for complex disposal decisions.
+ 
 ---
 
 ## 7. Installation & Setup
