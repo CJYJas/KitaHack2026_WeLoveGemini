@@ -46,7 +46,7 @@ The platform connects residents, businesses, and sustainability goals:
 
 ---
 
-## 4. Overview of Technologies Used (to be completed)
+## 4. Overview of Technologies Used 
 
 ### **Google Technologies**
 * ![Flutter](https://img.shields.io/badge/Flutter-3.x-02569B?style=flat&logo=flutter&logoColor=white) **Flutter:** Cross-platform mobile UI with smooth 60FPS animations.
